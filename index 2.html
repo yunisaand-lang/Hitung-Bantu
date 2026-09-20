@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F2233">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>HitungBantu</title>
+
+<!-- =====================================================
+     BAGIAN 1: TAMPILAN (CSS)
+     Tidak memakai font atau file dari internet, jadi
+     benar-benar bisa dipakai offline.
+     ===================================================== -->
+<style>
+/* Warna disimpan sebagai variabel, jadi gampang diganti di satu tempat */
+:root{
+  --bg:#EEF2F6; --surface:#FFFFFF; --ink:#0F2233; --muted:#5A6B7B; --line:#D3DCE5;
+  --accent:#F25C05; --accent-ink:#FFFFFF; --soft:#FFF0E5; --ok:#12805C; --urgent:#D62839;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+/* Mode gelap otomatis mengikuti pengaturan HP */
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0B141D; --surface:#14212D; --ink:#EAF1F7; --muted:#96A7B7; --line:#26374A;
+    --accent:#FF8A3D; --accent-ink:#0B141D; --soft:#2A1E14; --ok:#3DCB94; --urgent:#FF6B7F;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45;
+  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:520px;margin:0 auto;padding:16px 14px 40px}
+
+/* Kepala aplikasi */
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.badge{flex:none;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap}
+.badge.on{color:var(--ok);border-color:var(--ok)}
+
+/* Kartu */
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:17px}
+
+/* Pilihan posko (deretan tombol yang bisa digeser) */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;max-width:210px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.tambah{border-style:dashed;color:var(--accent)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--urgent);margin-right:6px}
+
+/* Isian */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label.l{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+input[type=number],input[type=text]{width:100%;min-height:48px;padding:8px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg)}
+input[type=number]{font-size:20px;font-weight:700}
+input[type=text]{font-size:17px;font-weight:600}
+.cek{display:flex;align-items:center;gap:10px;min-height:48px;margin-top:10px;font-weight:600;font-size:15px}
+.cek input{width:24px;height:24px;accent-color:var(--urgent);flex:none}
+.sub{font-size:13px;color:var(--muted);margin:8px 0 0}
+.warn{color:var(--accent);font-weight:600}
+
+/* Hasil */
+.res{list-style:none;margin:0;padding:0}
+.res li{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 0;border-top:1.5px solid var(--line)}
+.res li:first-child{border-top:0;padding-top:2px}
+.res .nm{font-weight:600}
+.res .val{font-size:24px;font-weight:800;text-align:right;line-height:1.1}
+.res .val small{font-size:14px;font-weight:600;color:var(--muted);margin-left:4px}
+.res .fm{grid-column:1 / -1;font-size:13px;color:var(--muted)}
+.empty{color:var(--muted);margin:0}
+.note{background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px;margin-top:10px}
+
+/* Rekap semua posko */
+.plist{list-style:none;margin:0;padding:0}
+.plist li{padding:12px 0;border-top:1.5px solid var(--line)}
+.plist li:first-child{border-top:0;padding-top:2px}
+.plist .ph{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.plist .ph b{font-size:16px}
+.plist .pm{font-size:13.5px;color:var(--muted);margin-top:2px}
+.plist .pn{font-size:14.5px;margin-top:6px}
+.tagu{flex:none;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--urgent);color:#fff}
+.tagok{flex:none;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--ok);color:#fff}
+.plist .wkt{font-size:13px;color:var(--muted);margin-top:4px}
+.plist .wkt.ok{color:var(--ok);font-weight:600}
+.tick{color:var(--ok);font-weight:800;margin-right:4px}
+
+/* Kartu pengiriman */
+.kirim{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 12px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);font-weight:700;font-size:16px}
+.kirim input{width:28px;height:28px;accent-color:var(--ok);flex:none}
+.stat{margin:10px 2px 0;font-size:14.5px;color:var(--muted)}
+.stat.ok{color:var(--ok)}
+.stat.ok b{font-size:15.5px}
+.plist button.buka{margin-top:8px;min-height:40px;padding:0 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);font-weight:600;font-size:13.5px}
+
+/* Tombol */
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{min-height:46px;padding:0 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:15px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.bahaya{color:var(--urgent);border-color:var(--urgent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* Bagian yang bisa dibuka-tutup */
+details{background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:0 16px;margin-bottom:14px}
+summary{min-height:52px;display:flex;align-items:center;font-weight:700;font-size:16px;cursor:pointer}
+details[open] summary{border-bottom:1.5px solid var(--line);margin-bottom:12px}
+details > div{padding-bottom:16px}
+.std{display:grid;grid-template-columns:1fr 110px;gap:8px 12px;align-items:center;margin-bottom:10px}
+.std span{font-size:14px}
+.std span em{display:block;font-style:normal;font-size:12.5px;color:var(--muted)}
+.std input{min-height:44px;font-size:16px}
+.src{font-size:13px;color:var(--muted);margin:16px 4px 0}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 28px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>HitungBantu</h1>
+      <p>Hitung kebutuhan logistik tiap posko</p>
+    </div>
+    <!-- Lencana ini berubah jadi hijau kalau aplikasi sudah siap dipakai offline -->
+    <span class="badge" id="badge">Mengecek…</span>
+  </header>
+
+  <!-- =====================================================
+       BAGIAN 2: DAFTAR POSKO
+       Setiap posko punya nomor, nama, dan datanya sendiri.
+       ===================================================== -->
+  <section class="card" aria-labelledby="t-posko">
+    <h2 id="t-posko">Pilih posko</h2>
+    <div class="chips" id="chips" role="group" aria-label="Daftar posko"></div>
+
+    <label class="l" for="nama">Nama posko</label>
+    <input id="nama" type="text" maxlength="40" placeholder="Contoh: GOR Kecamatan" autocomplete="off">
+
+    <label class="cek">
+      <input type="checkbox" id="mendesak">
+      Butuh bantuan mendesak
+    </label>
+    <p class="sub" id="wkt-catatan"></p>
+  </section>
+
+  <!-- =====================================================
+       BAGIAN 3: DATA PENGUNGSI (untuk posko yang dipilih)
+       ===================================================== -->
+  <section class="card" aria-labelledby="t-input">
+    <h2 id="t-input">Data pengungsi</h2>
+    <div class="grid">
+      <div>
+        <label class="l" for="jml">Jumlah pengungsi</label>
+        <input id="jml" type="number" inputmode="numeric" min="1" placeholder="120">
+      </div>
+      <div>
+        <label class="l" for="hari">Lama (hari)</label>
+        <input id="hari" type="number" inputmode="numeric" min="1" placeholder="3">
+      </div>
+    </div>
+
+    <p class="sub" style="margin-top:14px">Kelompok rentan (boleh dikosongkan)</p>
+    <div class="grid" style="margin-top:8px">
+      <div>
+        <label class="l" for="bayi">Bayi / balita</label>
+        <input id="bayi" type="number" inputmode="numeric" min="0" placeholder="0">
+      </div>
+      <div>
+        <label class="l" for="hamil">Ibu hamil / menyusui</label>
+        <input id="hamil" type="number" inputmode="numeric" min="0" placeholder="0">
+      </div>
+      <div>
+        <label class="l" for="lansia">Lansia</label>
+        <input id="lansia" type="number" inputmode="numeric" min="0" placeholder="0">
+      </div>
+      <div>
+        <label class="l" for="disab">Disabilitas</label>
+        <input id="disab" type="number" inputmode="numeric" min="0" placeholder="0">
+      </div>
+    </div>
+    <p class="sub" id="pesan" role="status"></p>
+  </section>
+
+  <!-- =====================================================
+       BAGIAN 4: HASIL UNTUK POSKO INI
+       ===================================================== -->
+  <section class="card" aria-labelledby="t-hasil">
+    <h2 id="t-hasil">Kebutuhan posko ini</h2>
+    <ul class="res" id="hasil"></ul>
+    <div class="note" id="prioritas" hidden></div>
+    <div class="row">
+      <button class="btn" id="btn-salin" disabled>Salin hasil</button>
+      <button class="btn" id="btn-bagi" disabled hidden>Bagikan</button>
+      <button class="btn bahaya" id="btn-hapus">Hapus posko ini</button>
+    </div>
+    <p class="sub">Data tersimpan otomatis di HP ini.</p>
+  </section>
+
+  <!-- =====================================================
+       BAGIAN 4B: PENGIRIMAN LOGISTIK
+       Pihak pengirim mencentang kalau logistik sudah dikirim.
+       Tanggal dan jam tercatat otomatis.
+       ===================================================== -->
+  <section class="card" aria-labelledby="t-kirim">
+    <h2 id="t-kirim">Pengiriman logistik</h2>
+    <label class="kirim">
+      <input type="checkbox" id="dikirim">
+      Logistik sudah dikirim ke posko ini
+    </label>
+    <p class="stat" id="status-kirim" role="status"></p>
+
+    <label class="l" for="pengirim" style="margin-top:14px">Nama pengirim (boleh dikosongkan)</label>
+    <input id="pengirim" type="text" maxlength="40" placeholder="Contoh: Andi, Tim Logistik BEM" autocomplete="off">
+  </section>
+
+  <!-- =====================================================
+       BAGIAN 5: REKAP SEMUA POSKO
+       Posko yang mendesak tampil paling atas.
+       ===================================================== -->
+  <section class="card" aria-labelledby="t-rekap">
+    <h2 id="t-rekap">Rekap semua posko</h2>
+    <p class="sub" id="progres" style="margin:0 0 8px"></p>
+    <ul class="plist" id="rekap"></ul>
+
+    <h2 style="margin-top:18px">Total kebutuhan semua posko</h2>
+    <ul class="res" id="total"></ul>
+
+    <h2 style="margin-top:18px">Masih harus dikirim</h2>
+    <ul class="res" id="total-belum"></ul>
+
+    <div class="row">
+      <button class="btn pri" id="btn-salin-rekap" disabled>Salin rekap</button>
+      <button class="btn" id="btn-bagi-rekap" disabled hidden>Bagikan rekap</button>
+    </div>
+  </section>
+
+  <details>
+    <summary>Pengaturan standar</summary>
+    <div>
+      <p class="sub" style="margin-top:0">Angka awal mengacu ke Sphere Handbook. Beberapa angka adalah asumsi dan bisa kamu ubah sesuai kondisi lapangan.</p>
+      <div id="pengaturan"></div>
+      <div class="row"><button class="btn" id="btn-reset">Kembalikan ke standar awal</button></div>
+    </div>
+  </details>
+
+  <p class="src">Sumber standar: Sphere Handbook (spherestandards.org). Periksa edisi terbaru sebelum dipakai untuk penelitian. Hasil ini adalah perkiraan awal, bukan pengganti penilaian tim lapangan.</p>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- =====================================================
+     BAGIAN 6: LOGIKA (JavaScript)
+     ===================================================== -->
+<script>
+/* ---------- A. STANDAR YANG DIPAKAI ----------
+   Semua angka ada di sini. Kalau mau mengubah standar,
+   cukup ubah angka di bagian ini (atau lewat menu Pengaturan). */
+const STANDAR_AWAL = {
+  air:    {nama:'Air bersih',            nilai:15,  satuan:'liter / orang / hari',   sumber:'Sphere: minimal 15 liter'},
+  beras:  {nama:'Beras',                 nilai:0.4, satuan:'kg / orang / hari',      sumber:'Asumsi (setara sekitar 2.100 kkal dengan lauk)'},
+  toilet: {nama:'Orang per toilet',      nilai:20,  satuan:'orang / 1 toilet',       sumber:'Sphere: maksimal 20 orang per toilet'},
+  tempat: {nama:'Ruang tinggal',         nilai:3.5, satuan:'m² / orang',             sumber:'Sphere: minimal 3,5 m² per orang'},
+  selimut:{nama:'Selimut',               nilai:1,   satuan:'pcs / orang',            sumber:'Asumsi'},
+  popok:  {nama:'Popok bayi',            nilai:5,   satuan:'pcs / bayi / hari',      sumber:'Asumsi'},
+  sabun:  {nama:'Sabun',                 nilai:250, satuan:'gram / orang / bulan',   sumber:'Sphere: 250 gram per bulan'}
+};
+
+const KUNCI_STANDAR = 'hitungbantu-standar';
+const KUNCI_POSKO   = 'hitungbantu-posko';
+const KUNCI_AKTIF   = 'hitungbantu-aktif';
+
+/* ---------- B. PENYIMPANAN DI HP (localStorage) ----------
+   Dibungkus try/catch supaya aplikasi tidak error
+   kalau penyimpanan diblokir oleh browser. */
+function baca(kunci, cadangan){
+  try{
+    const teks = localStorage.getItem(kunci);
+    return teks ? JSON.parse(teks) : cadangan;
+  }catch(e){ return cadangan; }
+}
+function tulis(kunci, nilai){
+  try{ localStorage.setItem(kunci, JSON.stringify(nilai)); }catch(e){}
+}
+
+// Standar aktif = standar awal yang ditimpa pengaturan pengguna (kalau ada)
+let standar = {};
+function muatStandar(){
+  const tersimpan = baca(KUNCI_STANDAR, {});
+  for(const k in STANDAR_AWAL){
+    const n = Number(tersimpan[k]);
+    standar[k] = (n > 0) ? n : STANDAR_AWAL[k].nilai;
+  }
+}
+
+/* ---------- C. DATA POSKO ----------
+   Tiap posko berbentuk objek:
+   {id, no, nama, mendesak, n, h, bayi, hamil, lansia, disab,
+    dibuat, diubah, dikirim, waktuKirim, pengirim}
+   Semua waktu disimpan sebagai angka milidetik (Date.now()).
+   Semua posko disimpan dalam satu daftar (array) bernama 'posko'. */
+let posko = [];
+let aktifId = null;
+
+function poskoBaru(){
+  const no = posko.reduce((m, p) => Math.max(m, p.no), 0) + 1;   // nomor otomatis: 1, 2, 3, ...
+  const sekarang = Date.now();
+  return {id:'p' + sekarang + no, no, nama:'', mendesak:false, n:0, h:0, bayi:0, hamil:0, lansia:0, disab:0,
+          dibuat:sekarang, diubah:sekarang, dikirim:false, waktuKirim:null, pengirim:''};
+}
+function aktif(){ return posko.find(p => p.id === aktifId) || posko[0]; }
+function simpanSemua(){ tulis(KUNCI_POSKO, posko); tulis(KUNCI_AKTIF, aktifId); }
+function namaPosko(p){ return 'Posko ' + p.no + (p.nama.trim() ? ' · ' + p.nama.trim() : ''); }
+
+function muatPosko(){
+  const data = baca(KUNCI_POSKO, []);
+  posko = Array.isArray(data) ? data : [];
+  // Melengkapi data lama (dari versi sebelumnya) yang belum punya kolom waktu dan pengiriman
+  posko.forEach(p => {
+    p.nama = p.nama || ''; p.pengirim = p.pengirim || '';
+    p.dibuat = p.dibuat || Date.now(); p.diubah = p.diubah || p.dibuat;
+    p.dikirim = !!p.dikirim; p.waktuKirim = p.waktuKirim || null;
+  });
+  if(!posko.length) posko.push(poskoBaru());          // pertama kali: langsung ada Posko 1
+  aktifId = baca(KUNCI_AKTIF, null);
+  if(!posko.some(p => p.id === aktifId)) aktifId = posko[0].id;
+}
+
+/* ---------- D. FUNGSI BANTU ---------- */
+const $ = (id) => document.getElementById(id);
+const angka = (id) => Math.max(0, Math.floor(Number($(id).value) || 0));
+const fmt = (x) => x.toLocaleString('id-ID', {maximumFractionDigits:1});
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Mengubah angka waktu jadi tulisan, contoh: "20 Sep 2026, 20.15"
+function fmtWaktu(ts){
+  if(!ts) return '-';
+  return new Date(ts).toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+// Tulisan status pengiriman untuk teks salinan
+function statusTeks(p){
+  return p.dikirim
+    ? `SUDAH DIKIRIM (${fmtWaktu(p.waktuKirim)}${p.pengirim.trim() ? ', oleh ' + p.pengirim.trim() : ''})`
+    : 'BELUM DIKIRIM';
+}
+
+function toast(pesan){
+  const t = $('toast');
+  t.textContent = pesan;
+  t.classList.add('show');
+  clearTimeout(toast.w);
+  toast.w = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ---------- E. RUMUS PERHITUNGAN (inti aplikasi) ----------
+   Input : jumlah orang (n), lama hari (h), jumlah bayi (bayi)
+   Output: daftar kebutuhan beserta rumusnya */
+function hitung(n, h, bayi){
+  const s = standar;
+  return [
+    {nama:'Air bersih', nilai:n*s.air*h, satuan:'liter',
+     info:`${fmt(n)} × ${fmt(s.air)} × ${h} hari`,
+     tambah:`≈ ${fmt(Math.ceil(n*s.air*h/20))} jeriken 20 liter`},
+    {nama:'Beras', nilai:n*s.beras*h, satuan:'kg',
+     info:`${fmt(n)} × ${fmt(s.beras)} × ${h} hari`,
+     tambah:`≈ ${fmt(Math.ceil(n*s.beras*h/25))} karung 25 kg`},
+    {nama:'Toilet', nilai:Math.ceil(n/s.toilet), satuan:'unit',
+     info:`${fmt(n)} ÷ ${fmt(s.toilet)} orang per toilet`},
+    {nama:'Ruang tinggal', nilai:n*s.tempat, satuan:'m²',
+     info:`${fmt(n)} × ${fmt(s.tempat)} m²`},
+    {nama:'Selimut', nilai:Math.ceil(n*s.selimut), satuan:'pcs',
+     info:`${fmt(n)} × ${fmt(s.selimut)}`},
+    {nama:'Sabun', nilai:(n*s.sabun*h/30)/1000, satuan:'kg',
+     info:`${fmt(n)} × ${fmt(s.sabun)} g ÷ 30 hari × ${h} hari`},
+    ...(bayi > 0 ? [{nama:'Popok bayi', nilai:bayi*s.popok*h, satuan:'pcs',
+     info:`${fmt(bayi)} bayi × ${fmt(s.popok)} × ${h} hari`}] : [])
+  ];
+}
+// Posko dianggap "lengkap" kalau jumlah orang dan hari sudah diisi
+const lengkap = (p) => p.n >= 1 && p.h >= 1;
+
+/* ---------- F. TAMPILAN: PILIHAN POSKO ---------- */
+function tampilChip(){
+  $('chips').innerHTML = posko.map(p =>
+    `<button class="chip" data-id="${p.id}" aria-pressed="${p.id === aktifId}">${p.dikirim ? '<span class="tick" aria-label="sudah dikirim">✓</span>' : (p.mendesak ? '<span class="dot" aria-label="mendesak"></span>' : '')}${esc(namaPosko(p))}</button>`
+  ).join('') + '<button class="chip tambah" data-tambah="1">+ Tambah posko</button>';
+}
+// Mengisi kolom isian sesuai posko yang dipilih
+function isiForm(){
+  const p = aktif();
+  $('nama').value = p.nama;
+  $('mendesak').checked = p.mendesak;
+  $('jml').value = p.n || '';
+  $('hari').value = p.h || '';
+  $('bayi').value = p.bayi || '';
+  $('hamil').value = p.hamil || '';
+  $('lansia').value = p.lansia || '';
+  $('disab').value = p.disab || '';
+  $('pengirim').value = p.pengirim;
+}
+// Menampilkan status pengiriman dan catatan waktu posko yang dipilih
+function tampilStatusKirim(){
+  const p = aktif();
+  $('dikirim').checked = p.dikirim;
+  const st = $('status-kirim');
+  st.className = 'stat' + (p.dikirim ? ' ok' : '');
+  st.innerHTML = p.dikirim
+    ? `<b>Sudah dikirim</b><br>${esc(fmtWaktu(p.waktuKirim))}${p.pengirim.trim() ? ' · oleh ' + esc(p.pengirim.trim()) : ''}`
+    : 'Belum dikirim';
+  $('wkt-catatan').textContent = 'Dicatat ' + fmtWaktu(p.dibuat) + ' · Diperbarui ' + fmtWaktu(p.diubah);
+}
+
+/* ---------- G. TAMPILAN: HASIL POSKO INI ---------- */
+let teksPosko = '';   // teks siap salin untuk posko yang dipilih
+
+function tampilkan(){
+  const p = aktif();
+  const ul = $('hasil'), pesan = $('pesan'), prio = $('prioritas');
+  const tombol = [$('btn-salin'), $('btn-bagi')];
+
+  $('t-hasil').textContent = 'Kebutuhan ' + namaPosko(p);
+  pesan.textContent = ''; pesan.className = 'sub';
+
+  if(!lengkap(p)){
+    ul.innerHTML = '<li><p class="empty">Isi jumlah pengungsi dan lama hari, hasil muncul di sini.</p></li>';
+    prio.hidden = true;
+    teksPosko = '';
+    tombol.forEach(b => b.disabled = true);
+    return;
+  }
+
+  // Peringatan kalau jumlah kelompok rentan melebihi jumlah pengungsi
+  if(p.bayi + p.hamil + p.lansia + p.disab > p.n){
+    pesan.textContent = 'Jumlah kelompok rentan lebih besar dari jumlah pengungsi. Periksa lagi datanya.';
+    pesan.className = 'sub warn';
+  }
+
+  const daftar = hitung(p.n, p.h, p.bayi);
+  ul.innerHTML = daftar.map(d =>
+    `<li><span class="nm">${esc(d.nama)}</span>
+      <span class="val">${fmt(d.nilai)}<small>${esc(d.satuan)}</small></span>
+      <span class="fm">${esc(d.info)}${d.tambah ? ' · ' + esc(d.tambah) : ''}</span></li>`
+  ).join('');
+
+  // Catatan prioritas untuk kelompok rentan
+  const rentan = [];
+  if(p.hamil)  rentan.push(`${fmt(p.hamil)} ibu hamil/menyusui`);
+  if(p.lansia) rentan.push(`${fmt(p.lansia)} lansia`);
+  if(p.disab)  rentan.push(`${fmt(p.disab)} penyandang disabilitas`);
+  if(rentan.length){
+    prio.hidden = false;
+    prio.textContent = 'Prioritaskan ' + rentan.join(', ') + ': tempat tidur dekat toilet dan jalur keluar, selimut tambahan, dan akses layanan kesehatan.';
+  }else{
+    prio.hidden = true;
+  }
+
+  teksPosko = `HitungBantu: ${namaPosko(p)}${p.mendesak ? ' (MENDESAK)' : ''}\n` +
+              `Dicatat: ${fmtWaktu(p.dibuat)}\n` +
+              `Status: ${statusTeks(p)}\n` +
+              `${fmt(p.n)} pengungsi, ${p.h} hari\n` +
+              daftar.map(d => `- ${d.nama}: ${fmt(d.nilai)} ${d.satuan}`).join('\n') +
+              (rentan.length ? `\nPrioritas: ${rentan.join(', ')}` : '');
+  tombol.forEach(b => b.disabled = false);
+}
+
+/* ---------- H. TAMPILAN: REKAP SEMUA POSKO ---------- */
+let teksRekap = '';
+
+// Menjumlahkan kebutuhan dari beberapa posko sekaligus
+function jumlahkan(daftar){
+  const total = {};
+  daftar.forEach(p => hitung(p.n, p.h, p.bayi).forEach(d => {
+    if(!total[d.nama]) total[d.nama] = {nilai:0, satuan:d.satuan};
+    total[d.nama].nilai += d.nilai;
+  }));
+  return total;
+}
+function barisTotal(total){
+  return Object.keys(total).map(k =>
+    `<li><span class="nm">${esc(k)}</span><span class="val">${fmt(total[k].nilai)}<small>${esc(total[k].satuan)}</small></span></li>`
+  ).join('');
+}
+function teksTotal(total){
+  return Object.keys(total).map(k => `- ${k}: ${fmt(total[k].nilai)} ${total[k].satuan}`).join('\n');
+}
+
+function tampilRekap(){
+  // Urutan: yang BELUM dikirim di atas, lalu yang mendesak, lalu menurut nomor
+  const urut = posko.slice().sort((a, b) => (a.dikirim - b.dikirim) || (b.mendesak - a.mendesak) || (a.no - b.no));
+  const isi = urut.filter(lengkap);
+  const belum = isi.filter(p => !p.dikirim);
+  const terkirim = posko.filter(p => p.dikirim).length;
+  const tombol = [$('btn-salin-rekap'), $('btn-bagi-rekap')];
+
+  $('progres').textContent = terkirim + ' dari ' + posko.length + ' posko sudah dikirimi logistik';
+
+  $('rekap').innerHTML = urut.map(p => {
+    const tag = p.dikirim ? '<span class="tagok">Terkirim</span>' : (p.mendesak ? '<span class="tagu">Mendesak</span>' : '');
+    const kepala = `<div class="ph"><b>${esc(namaPosko(p))}</b>${tag}</div>`;
+    const isiData = lengkap(p)
+      ? `<div class="pm">${fmt(p.n)} orang · ${p.h} hari</div><div class="pn">${esc(hitung(p.n, p.h, p.bayi).map(d => d.nama + ' ' + fmt(d.nilai) + ' ' + d.satuan).join(' · '))}</div>`
+      : '<div class="pm">Data belum lengkap</div>';
+    const status = p.dikirim
+      ? `<div class="wkt ok">✓ Dikirim ${esc(fmtWaktu(p.waktuKirim))}${p.pengirim.trim() ? ' oleh ' + esc(p.pengirim.trim()) : ''}</div>`
+      : '<div class="wkt">Belum dikirim</div>';
+    const dicatat = `<div class="wkt">Dicatat ${esc(fmtWaktu(p.dibuat))}</div>`;
+    return `<li>${kepala}${isiData}${status}${dicatat}<button class="buka" data-id="${p.id}">Buka posko ini</button></li>`;
+  }).join('');
+
+  if(!isi.length){
+    $('total').innerHTML = '<li><p class="empty">Total muncul setelah minimal satu posko terisi lengkap.</p></li>';
+    $('total-belum').innerHTML = '<li><p class="empty">Belum ada data.</p></li>';
+    teksRekap = '';
+    tombol.forEach(b => b.disabled = true);
+    return;
+  }
+
+  const totalSemua = jumlahkan(isi);
+  const totalBelum = jumlahkan(belum);
+  const orang = isi.reduce((j, p) => j + p.n, 0);
+  const orangBelum = belum.reduce((j, p) => j + p.n, 0);
+
+  $('total').innerHTML = barisTotal(totalSemua) +
+    `<li><span class="fm">Dari ${isi.length} posko · ${fmt(orang)} pengungsi</span></li>`;
+  $('total-belum').innerHTML = belum.length
+    ? barisTotal(totalBelum) + `<li><span class="fm">Untuk ${belum.length} posko yang belum dikirimi · ${fmt(orangBelum)} pengungsi</span></li>`
+    : '<li><p class="empty">Semua posko yang terisi sudah dikirimi logistik ✓</p></li>';
+
+  // Teks rekap siap salin / bagikan (lengkap dengan tanggal dan jam)
+  const bagianPosko = urut.filter(lengkap).map(p =>
+    `${namaPosko(p)}${p.mendesak ? ' (MENDESAK)' : ''}: ${fmt(p.n)} orang, ${p.h} hari\n` +
+    `Dicatat: ${fmtWaktu(p.dibuat)}\n` +
+    `Status: ${statusTeks(p)}\n` +
+    hitung(p.n, p.h, p.bayi).map(d => `- ${d.nama}: ${fmt(d.nilai)} ${d.satuan}`).join('\n')
+  ).join('\n\n');
+  teksRekap = `REKAP KEBUTUHAN POSKO (HitungBantu)\n` +
+              `Laporan dibuat: ${fmtWaktu(Date.now())}\n` +
+              `Terkirim: ${terkirim} dari ${posko.length} posko\n\n` +
+              `${bagianPosko}\n\n` +
+              `TOTAL SEMUA POSKO (${isi.length} posko, ${fmt(orang)} pengungsi)\n${teksTotal(totalSemua)}\n\n` +
+              (belum.length
+                ? `MASIH HARUS DIKIRIM (${belum.length} posko, ${fmt(orangBelum)} pengungsi)\n${teksTotal(totalBelum)}`
+                : 'Semua posko yang terisi sudah dikirimi logistik.');
+  tombol.forEach(b => b.disabled = false);
+}
+
+function segarkan(){ tampilChip(); tampilkan(); tampilStatusKirim(); tampilRekap(); }
+
+/* ---------- I. AKSI PENGGUNA ---------- */
+// Setiap kali isian berubah: simpan ke posko yang aktif, lalu hitung ulang
+function ubahData(){
+  const p = aktif();
+  p.nama = $('nama').value;
+  p.mendesak = $('mendesak').checked;
+  p.n = angka('jml'); p.h = angka('hari');
+  p.bayi = angka('bayi'); p.hamil = angka('hamil');
+  p.lansia = angka('lansia'); p.disab = angka('disab');
+  p.pengirim = $('pengirim').value;
+  p.diubah = Date.now();                 // catat kapan terakhir diubah
+  simpanSemua();
+  segarkan();
+}
+// Cukup pakai event 'input'. (Event 'change' sengaja tidak dipakai: event itu aktif saat
+// kolom kehilangan fokus dan bisa membuat tombol yang sedang diketuk ikut tergambar ulang.)
+['nama','mendesak','jml','hari','bayi','hamil','lansia','disab','pengirim'].forEach(id => {
+  $(id).addEventListener('input', ubahData);
+});
+$('mendesak').addEventListener('change', ubahData);   // cadangan untuk browser lama
+
+// Tanda centang "sudah dikirim": mencatat tanggal dan jam saat dicentang
+$('dikirim').addEventListener('change', () => {
+  const p = aktif();
+  if($('dikirim').checked){
+    p.dikirim = true;
+    p.waktuKirim = Date.now();
+    p.pengirim = $('pengirim').value;
+    toast('Ditandai terkirim: ' + fmtWaktu(p.waktuKirim));
+  }else{
+    if(!confirm('Batalkan tanda "sudah dikirim"? Catatan waktu pengiriman akan dihapus.')){
+      $('dikirim').checked = true;       // batal membatalkan
+      return;
+    }
+    p.dikirim = false;
+    p.waktuKirim = null;
+    toast('Tanda terkirim dibatalkan');
+  }
+  p.diubah = Date.now();
+  simpanSemua();
+  segarkan();
+});
+
+function pilih(id){
+  aktifId = id; simpanSemua(); isiForm(); segarkan();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+$('chips').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if(!b) return;
+  if(b.dataset.tambah){
+    const p = poskoBaru();
+    posko.push(p); pilih(p.id);
+    $('nama').focus();
+    toast(namaPosko(p) + ' ditambahkan');
+  }else if(b.dataset.id){
+    pilih(b.dataset.id);
+  }
+});
+$('rekap').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-id]');
+  if(b) pilih(b.dataset.id);
+});
+$('btn-hapus').addEventListener('click', () => {
+  const p = aktif();
+  if(!confirm('Hapus ' + namaPosko(p) + '? Data posko ini tidak bisa dikembalikan.')) return;
+  posko = posko.filter(x => x.id !== p.id);
+  if(!posko.length) posko.push(poskoBaru());
+  aktifId = posko[0].id;
+  simpanSemua(); isiForm(); segarkan();
+  toast('Posko dihapus');
+});
+
+/* ---------- J. SALIN & BAGIKAN ---------- */
+async function salin(teks){
+  if(!teks) return;
+  try{
+    await navigator.clipboard.writeText(teks);
+    toast('Berhasil disalin');
+  }catch(e){
+    // Cadangan untuk browser yang menolak clipboard
+    const ta = document.createElement('textarea');
+    ta.value = teks;
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('Berhasil disalin'); }
+    catch(err){ toast('Gagal menyalin'); }
+    ta.remove();
+  }
+}
+function bagikan(teks){
+  if(teks && navigator.share){
+    navigator.share({title:'HitungBantu', text:teks}).catch(() => {});
+  }
+}
+$('btn-salin').addEventListener('click', () => salin(teksPosko));
+$('btn-bagi').addEventListener('click', () => bagikan(teksPosko));
+$('btn-salin-rekap').addEventListener('click', () => salin(teksRekap));
+$('btn-bagi-rekap').addEventListener('click', () => bagikan(teksRekap));
+if(navigator.share){ $('btn-bagi').hidden = false; $('btn-bagi-rekap').hidden = false; }
+
+/* ---------- K. PENGATURAN STANDAR ---------- */
+function tampilPengaturan(){
+  $('pengaturan').innerHTML = Object.keys(STANDAR_AWAL).map(k => {
+    const d = STANDAR_AWAL[k];
+    return `<div class="std">
+      <span>${esc(d.nama)} <em>${esc(d.satuan)} · ${esc(d.sumber)}</em></span>
+      <input type="number" step="any" min="0.01" inputmode="decimal" data-k="${k}" value="${standar[k]}" aria-label="${esc(d.nama)}">
+    </div>`;
+  }).join('');
+}
+$('pengaturan').addEventListener('input', (e) => {
+  const k = e.target.dataset.k;
+  if(!k) return;
+  const simpanan = baca(KUNCI_STANDAR, {});
+  const n = Number(e.target.value);
+  if(n > 0){ simpanan[k] = n; standar[k] = n; }
+  tulis(KUNCI_STANDAR, simpanan);
+  segarkan();
+});
+$('btn-reset').addEventListener('click', () => {
+  tulis(KUNCI_STANDAR, {});
+  muatStandar(); tampilPengaturan(); segarkan();
+  toast('Standar dikembalikan');
+});
+
+/* ---------- L. OFFLINE: DAFTARKAN SERVICE WORKER ----------
+   Service worker hanya jalan lewat https:// atau localhost
+   (contoh: Live Server, GitHub Pages). */
+const badge = $('badge');
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js')
+    .then(() => navigator.serviceWorker.ready)
+    .then(() => { badge.textContent = 'Siap offline'; badge.className = 'badge on'; })
+    .catch(() => { badge.textContent = 'Belum offline'; });
+}else{
+  badge.textContent = 'Belum offline';
+}
+
+/* ---------- M. MULAI ---------- */
+muatStandar();
+muatPosko();
+tampilPengaturan();
+isiForm();
+segarkan();
+</script>
+</body>
+</html>
