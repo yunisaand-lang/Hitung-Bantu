@@ -5,8 +5,8 @@
    ============================================================ */
 
 // Nama cache. KALAU KAMU MENGUBAH isi index.html, ganti angka versinya
-// (v1 -> v2) supaya HP mengambil file yang baru.
-const CACHE = 'hitungbantu-v1';
+// (v3 -> v4) supaya HP mengambil file yang baru.
+const CACHE = 'hitungbantu-v3';
 
 // Daftar file yang disimpan di HP. Nama harus sama persis dengan nama file.
 const FILES = [
@@ -17,10 +17,15 @@ const FILES = [
   './icon-512.png'
 ];
 
-// 1) INSTALL: dijalankan sekali saat pertama kali dibuka (harus online).
-//    Semua file di daftar FILES disimpan ke cache.
+// 1) INSTALL: dijalankan saat pertama kali dibuka atau saat ada versi baru (harus online).
+//    cache:'reload' memastikan yang disimpan adalah file TERBARU dari server,
+//    bukan salinan lama yang masih tersimpan di browser.
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)));
+  e.waitUntil(
+    caches.open(CACHE).then((c) =>
+      Promise.all(FILES.map((f) => c.add(new Request(f, {cache: 'reload'}))))
+    )
+  );
   self.skipWaiting();
 });
 
